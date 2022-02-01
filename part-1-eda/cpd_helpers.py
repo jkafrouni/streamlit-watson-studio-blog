@@ -47,7 +47,7 @@ def list_projects(headers):
         projects (list): A list of (project_name, project_id) tuples.
         error_msg (str): The text response from the request if the request failed.
     """
-    r = requests.get(f"{CPD_URL}/v2/projects", headers=headers)
+    r = requests.get(f"{CPD_URL}/v2/projects", headers=headers, params={"limit": 100})
     if r.ok:
         projects = r.json()['resources']
         parsed_projects = [(x['entity']['name'], x['metadata']['guid']) for x in projects]
