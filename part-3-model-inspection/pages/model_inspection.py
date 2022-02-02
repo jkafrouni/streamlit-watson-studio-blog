@@ -5,8 +5,7 @@ import shap
 import numpy as np
 
 import cpd_helpers
-from utils import format_tuples
-
+from utils import format_tuples, make_basic_roc_curve, make_advanced_roc_curve, format_autoai_results
 
 
 def write_shap_job_select(headers, model_details):
@@ -48,17 +47,35 @@ def write_shap_plots(headers, model_details):
                            feature_names=precomputed_shap['feature_names'],
                            data=np.array(precomputed_shap['data'])
                            )
-    # st_shap(shap.plots.force(exp[:100]), height=500)
-    # shap.plots.beeswarm(exp)
-    # st_shap(shap.plots.beeswarm(exp))  # error
-    # st_shap(shap.summary_plot(exp), height=100, width=100)
-
     fig, _ = plt.subplots(figsize=(10, 10))
-    plot = shap.plots.beeswarm(exp, show=False)
+    shap.plots.beeswarm(exp, show=False)
     st.write(fig)
-    # shap.plots.waterfall(explainer[0])
-    # shap.plots.force(explainer[:10])
-    # shap.dependence_plot(0, explainer.values[:1000, :],explainer.data[:1000, :])
+
+
+def write_other_available_results(headers, model_details):
+    st.markdown("""
+    ### Additional model information (AutoAI only)
+    If your model was trained in AutoAI, additional information can be retrieved
+    from its metadata and displayed below.
+    """
+    )
+    metrics = model_details['entity'].get('metrics')
+    if metrics is None:
+        st.info("Select a model created with AutoAI to display additional information.")
+        return
+
+    st.markdown("#### Training metrics")
+    st.write(format_autoai_results(metrics[0]['ml_metrics']))
+
+    st.markdown("#### ROC curve")
+    roc = metrics[0]['context']['binary_classification']['roc_curve'][1]
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(make_basic_roc_curve(roc['fpr'], roc['tpr']))
+
+    with col2:
+        st.plotly_chart(make_advanced_roc_curve(roc['fpr'], roc['tpr'], roc['thresholds']))
 
 
 def write():
@@ -86,3 +103,4 @@ def write():
             st.write(error_msg)
     else:
         write_shap_plots(headers, model_details)
+        write_other_available_results(headers, model_details)
